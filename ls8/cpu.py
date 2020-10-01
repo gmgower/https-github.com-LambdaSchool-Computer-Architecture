@@ -1,13 +1,30 @@
+  
 """CPU functionality."""
 
 import sys
 
+HLT = 0b00000001
+LDI = 0b10000010
+PRN = 0b01000111
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.pc = 0  # Program counter, the index (address) of the current instruction
+        self.ram = [0] * 256 # length and the index will stop at 255
+        self.register = [0] * 8 # returns 8 zeros and stores values (0-7)
+
+     # MAR contains the address that is being read or written to.
+    #ram_read() should accept the address (MAR) to read and return the value stored #there.
+    def ram_read(self, MAR):
+        # MAR is mem address register to read data from
+        return self.ram[MAR]
+
+    # MDR contains the data that was read or the data to write.
+    # ram_write() should accept a value(MDR) to write, and the address (MAR) to write it to.
+    def ram_write(self, MAR, MDR):
+        self.ram[MDR] = MAR
 
     def load(self):
         """Load a program into memory."""
@@ -35,7 +52,7 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.register[reg_a] += self.register[reg_b]
         #elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -56,10 +73,35 @@ class CPU:
         ), end='')
 
         for i in range(8):
-            print(" %02X" % self.reg[i], end='')
+            print(" %02X" % self.register[i], end='')
 
         print()
 
     def run(self):
         """Run the CPU."""
-        pass
+        # read the memory address that's stored in register PC, 
+        # and store that result in IR, the Instruction Register. 
+        running = True
+
+        while running:
+            IR = self.ram[self.pc]
+
+            operand_a = self.ram_read(self.pc + 1) # register
+            operand_b = self.ram_read(self.pc + 2) # immediate
+
+            opcode = IR
+
+            if opcode == HLT:
+                sys.exit()
+
+            # Set the value of a register to an integer.
+            elif opcode == LDI:
+                self.register[operand_a] = operand_b
+                # Jump over operands to go to next instruction
+                self.pc += 3
+
+            # Print the register address
+            elif opcode == PRN:
+                print("HERE: ", self.pc)
+                print(self.register[operand_a])
+                self.pc += 2
