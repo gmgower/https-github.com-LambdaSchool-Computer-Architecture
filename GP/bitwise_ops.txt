@@ -1,0 +1,128 @@
+Operator   Boolean Operator   Bitwise Operators
+AND              &&                &
+OR               ||                |
+NOT              !                 ~
+XOR                                ^
+
+xor: exclusive or. one and only one can be true. the highlander operator!
+(true xor false) --> true
+(true xor true) --> false
+(false xor false) --> false
+
+and: both statements are true
+(true and true) --> true
+(true and false) --> false
+
+does bitwise operator on strings evaluate the string’s binary representation?
+
+
+AND, and Masking
+  1011
+& 0110
+-------
+  0010
+
+   10101001
+ & 00111001
+ ----------
+   00101001
+
+  1010
+& 0000
+ -----
+  0000
+
+  1010
+& 1111
+ ------
+  1010
+# Masking
+  10101011
+& 00000001
+ ----------
+  00000001
+
+
+OR "at least one is true"
+  0110 
+| 1010
+-------
+  1110
+
+  10110011
+| 01011010
+-----------
+  11111011
+
+
+NOT - inverts truthiness
+1010 --> 0101
+
+~, will produce unexpected results
+
+
+XOR
+  1011
+^ 0101
+------
+  1110
+
+  0101
+^ 0100
+ -----
+  0001 
+
+
+Bit Shifting
+
+ Rightshifting
+  1101 >> 1
+   110
+
+  1101 >> 2
+    11
+
+  00001101 >> 2
+  00000011
+ 
+  10101101 >> 5
+  00000101
+
+Extract from the command the number of arguments this command takes
+iow find out how much to move the program counter
+
+"extract" - move to the right, turn everything else to 0 if needed
+
+Rightshifting
+  ||
+  vv
+  10010101 >> 6
+        10
+  00000010
+
+ADD
+  |
+  v
+10100000
+10100000 >> 5
+       v
+     101
+    &001
+    ----
+     001
+
+(0b10100000 >> 5) & 001
+
+(0b11011111 >> 5) & 0b01
+
+
+ Left bit shifting
+    1110 << 1
+   11100 
+
+
+    1110 << 2
+  111000
+    
+    10101010 << 4
+0000101010100000
