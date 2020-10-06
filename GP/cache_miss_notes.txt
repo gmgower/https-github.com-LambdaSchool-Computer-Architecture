@@ -1,0 +1,20 @@
+
+# LS-8
+Lambda School 8-bit machine
+
+11111111
+00000000
+
+self.memory = [0] * 256
+
+Memory bus (wires!) - can address 256 bytes of memory
+
+RAM - fast because we can access any address directly
+
+"storage" aka secondary memory aka hard drive
+
+
+Processor, Registers, L1 Cache, L2 Cache, RAM
+
+Cache hit
+Cache miss
