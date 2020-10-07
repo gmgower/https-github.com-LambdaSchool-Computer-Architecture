@@ -2,18 +2,6 @@
 
 import sys
 
-# program_filename = sys.argv[1]
-# print(program_filename)
-# sys.exit()
-# print(sys.argv)
-# sys.exit()
-
-LDI = 0b10000010
-MUL = 0b10100010
-PRN = 0b01000111
-HLT = 0b00000001
-
-
 class CPU:
     """Main CPU class."""
 
@@ -25,12 +13,27 @@ class CPU:
         self.reg = [0] * 8  # returns 8 zeros and stores values (0-7)
         # Program counter, the index (address) of the current instruction
         self.pc = 0
+        self.SP = 7 # R7 is reserved
+        self.reg[self.SP] = 0xF4
         self.running = True
-        # self.LDI = 0b10000010
-        # self.PRN = 0b01000111
-        # self.HLT = 0b00000001
+ 
+        # Instructions
+        self.LDI =  0b10000010
+        self.MUL =  0b10100010
+        self.PRN =  0b01000111
+        self.PUSH = 0b01000101
+        self.POP =  0b01000110
+        self.HLT =  0b00000001
 
-        # self.MULT = 0b10100010
+        # Turning the branch table into an object to be able to update easier
+        self.branchtable = {
+            self.LDI: self.ldi,
+            self.MUL: self.multiply,
+            self.PRN: self.prn,
+            self.HLT: self.halt,
+            self.PUSH: self.push,
+            self.POP: self.pop            
+        }
 
     def load(self, program_filename):
         """Load a program into memory."""
@@ -52,22 +55,6 @@ class CPU:
 
                 address += 1  # add one and goes to the next
 
-    # For now, we've just hardcoded a program:
-
-    # program = [
-    #     # From print8.ls8
-    #     0b10000010, # LDI R0,8
-    #     0b00000000,
-    #     0b00001000,
-    #     0b01000111, # PRN R0
-    #     0b00000000,
-    #     0b00000001, # HLT
-    # ]
-
-    # for instruction in program:
-    #     self.ram[address] = instruction
-    #     address += 1
-
     # MAR contains the address that is being read or written to.
     #ram_read() should accept the address (MAR) to read and return the value stored #there.
 
@@ -80,20 +67,81 @@ class CPU:
     def ram_write(self, MDR, MAR):
         self.ram[MAR] = MDR
 
+
+    # Branch Table
+
+    def ldi(self):
+        # print("HI")
+        register_num = self.ram_read(self.pc + 1)  # operand_a (address)
+        value = self.ram_read(self.pc + 2)  # operand_b (value)
+        # adds the value to the register
+        self.reg[register_num] = value
+        # print('-----------------')
+        # print(f'LDI: value ', self.reg[register_num])
+        self.pc += 3
+    
+    def multiply(self):
+        num_reg_a = self.ram_read(self.pc + 1)
+        num_reg_b = self.ram_read(self.pc + 2)
+        self.alu('MULT', num_reg_a, num_reg_b)
+        self.pc += 3
+
+    def prn(self):
+        register_num = self.ram_read(self.pc + 1)  # operand_a (address)
+        value = self.reg[register_num]
+        # print('-----------------')
+        print(value)
+        self.pc += 2
+
+    def push(self):
+        # decrement the stack pointer 
+        self.reg[self.SP] -= 1
+        
+        #copy value from register into memory
+        register_num = self.ram[self.pc + 1]
+        value = self.reg[register_num]  # this value to push
+
+        stack_position = self.reg[self.SP] # index into memory
+        self.ram[stack_position] = value # store the value on the stack
+        
+        self.pc += 2
+
+    def pop(self):
+        # current stack pointer position
+        stack_position = self.reg[self.SP]
+
+        # get current value from memory(RAM) from stack pointer
+        value = self.ram[stack_position]
+
+        # add the value to the register
+        register_num = self.ram[self.pc + 1]
+        self.reg[register_num] = value
+        # Increment the stack pointer position
+        self.reg[self.SP] += 1
+
+        self.pc += 2
+
+    def halt(self):
+        self.running = False
+        
+
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        #elif op == "SUB": etc
+        elif op == "SUB": 
+            self.reg[reg_a] -= self.reg[reg_b]
         elif op == "MULT":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "DIV":
+            self.reg[reg_a] /= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
-    def trace(self):
+    def trace(self, LABEL=str()):
 
-        print(f"TRACE: %02X | %02X %02X %02X |" % (
+        print(f"{LABEL} TRACE --> PC: %02i | RAM: %03i %03i %03i | Register: " % (
             self.pc,
             # self.fl,
             # self.ie,
@@ -103,7 +151,12 @@ class CPU:
         ), end='')
 
         for i in range(8):
-            print(" %02X" % self.reg[i], end='')
+            print(" %02i" % self.reg[i], end='')
+
+            print(" | Stack:", end='')
+
+            for i in range(240, 244):
+                print(" %02i" % self.ram_read(i), end='')
 
         print()
 
@@ -124,46 +177,11 @@ class CPU:
 
             # Stores the result in "Instruction Register" from the memory (RAM) address from the program
             IR = self.ram_read(self.pc)
-            # register_num = self.ram_read(PC + 1) # operand_a (address)
-            # value = self.ram_read(PC + 2) # operand_b (value)
-            # print('-----------------')
-            # print(f"run: IR:",IR)
-            # print('-----------------')
 
-            # self.trace()
-            if IR == LDI:
+            if self.branchtable.get(IR):
                 self.trace()
-                # print("HI")
-                register_num = self.ram_read(
-                    self.pc + 1)  # operand_a (address)
-                value = self.ram_read(self.pc + 2)  # operand_b (value)
-                # adds the value to the register
-                self.reg[register_num] = value
-                # print('-----------------')
-                # print(f'LDI: value ', self.reg[register_num])
-                self.pc += 3
-
-            elif IR == MUL:
-                num_reg_a = self.ram_read(self.pc + 1)
-                num_reg_b = self.ram_read(self.pc + 2)
-                self.alu('MULT', num_reg_a, num_reg_b)
-                self.pc += 3
-
-            elif IR == PRN:
-                self.trace()
-                register_num = self.ram_read(
-                    self.pc + 1)  # operand_a (address)
-                value = self.reg[register_num]
-                # print('-----------------')
-                print(value)
-                self.pc += 2
-
-            elif IR == HLT:
-                self.trace()
-            #     # print('LLLLL')
-                self.running = False
-
+                self.branchtable[IR]()
             else:
-
                 print('Unknown instruction')
+                self.trace("End")
                 self.running = False
